@@ -1,0 +1,101 @@
+from wxpy import *
+import json
+import requests
+import re
+import sqlite3
+import datetime
+
+
+
+def auto_ai(text):
+    url = "http://www.tuling123.com/openapi/api"
+    api_key = "d7b26da527284bfca879f76a0cc7946c"
+    payload = {
+        "key": api_key,
+        "info": text,
+        "userid": "666"
+    }
+    r = requests.post(url, data=json.dumps(payload))
+    result = json.loads(r.content)
+    if ('url' in result.keys()):
+        return result["text"] + result["url"]
+    else:
+        return result["text"]
+
+
+INSERT='INSERT INTO yueqiu(c_name,c_date) VALUES ("{}","{}")'
+UPDATE='UPDATE yueqiu set {}={} where c_name="{}"'
+DELETE='DELETE from yueqiu WHERE c_name="{}"'
+SELECT='SELECT {} FROM yueqiu where c_name="{}"'
+now_time = datetime.datetime.now()
+
+
+def db_excute(s):
+    try:
+        conn=sqlite3.connect('database')
+        conn.execute(s)
+        conn.commit()
+        print(s)
+        return True
+    except BaseException :
+        return False
+    finally:
+        conn.close()
+
+def check(s):
+    try:
+        conn=sqlite3.connect('database')
+        ans =conn.execute(SELECT.format("*",s))
+        conn.commit()
+        for i in ans:
+            for ii in i:
+                print(ii)
+        return True
+    except BaseException:
+        return False
+    finally:
+        conn.close()
+
+#db_excute(INSERT.format("daqs",datetime.datetime.now()))
+print(check("das"))
+exit()
+
+bot = Bot(cache_path=True)
+group = bot.groups(update=False, contact_only=False).search(keywords="测 试")
+print(group)
+
+print('ai启动')
+usage=''
+_class=''
+@bot.register(group)
+def group_message(msg):
+    if isinstance(msg.chat, Group) and not msg.is_at:
+        return
+    else:
+        choice = msg.test.lstrip().rstrip()
+        if msg.type != 'Text':
+             ret = '[奸笑][奸笑]'
+        elif re.match("功能", choice) is not None:
+            return usage
+        elif re.match("上课", choice) is not None:
+            return _class
+        elif re.match("新建约球",choice) is not None:
+            if check(msg.member.name) and db_excute(INSERT.format(msg.member.name,str(datetime.datetime.now()))):
+                return "新建约球成功，请使用命令 添加约球时间 来设置时间"
+            else:
+                return "新建约球失败"
+        elif re.match("添加约球时间",choice) is not None:
+            return
+        elif re.match("删除约球",choice) is not None:
+            return
+        elif re.match("查看约球",choice) is not None:
+            return
+        elif re.match("加入约球",choice) is not None:
+            return
+        else:
+            ret = auto_ai(msg.text)
+            print('[接收]' + str(msg))
+            print('[发送]' + str(ret))
+    return '@{}{}'.format(msg.member.name, ret)
+
+embed()
