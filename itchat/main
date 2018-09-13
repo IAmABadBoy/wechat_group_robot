@@ -85,12 +85,23 @@ def group_message(msg):
             else:
                 return "新建约球失败"
         elif re.match("添加约球时间",choice) is not None:
-            return
+            time=''
+            if check(msg.member.name) and db_excute(UPDATE.format("time",time):
+                return  "添加约球时间 成功"
+            else:
+                return "添加约球时间失败"
         elif re.match("删除约球",choice) is not None:
-            return
+            if check(msg.member.name) and db_excute(DELETE.format(msg.member.name)):
+                return "删除约球成功"
+            else:
+                return "删除约球失败"
         elif re.match("查看约球",choice) is not None:
-            return
+            return get_yueqiu()
         elif re.match("加入约球",choice) is not None:
+            return
+        elif re.match("所有请假记录",choice) is not None:
+            return get_qingjia()
+        elif re.match("请假",choice) is not None:
             return
         else:
             ret = auto_ai(msg.text)
@@ -98,4 +109,11 @@ def group_message(msg):
             print('[发送]' + str(ret))
     return '@{}{}'.format(msg.member.name, ret)
 
+def auto_send():
+
+
+def get_yueqiu():
+
+
+def get_qingjia():
 embed()
