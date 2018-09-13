@@ -1,0 +1,2 @@
+# wechat_group_robot
+基于图灵机器人和wxpy的简单的微信群聊机器人
