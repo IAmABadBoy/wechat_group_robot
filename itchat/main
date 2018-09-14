@@ -29,7 +29,18 @@ DELETE='DELETE from yueqiu WHERE c_name="{}"'
 SELECT='SELECT {} FROM yueqiu where c_name="{}"'
 now_time = datetime.datetime.now()
 
+qingjia={}
 
+conn = sqlite3.connect('database')
+ans=conn.execute("SELECT \"members\" FROM yueqiu WHERE c_name=\"{}\" AND is_valid= \"TRUE\" ".format("十四舍"))
+a=conn.execute("SELECT * FROM yueqiu WHERE is_valid =\"TRUE\" ")
+
+conn.commit()
+b=1
+for i in ans:
+    print(i)
+
+exit()
 def db_excute(s):
     try:
         conn=sqlite3.connect('database')
@@ -57,63 +68,156 @@ def check(s):
         conn.close()
 
 #db_excute(INSERT.format("daqs",datetime.datetime.now()))
-print(check("das"))
-exit()
+
 
 bot = Bot(cache_path=True)
 group = bot.groups(update=False, contact_only=False).search(keywords="测 试")
 print(group)
 
 print('ai启动')
-usage=''
-_class=''
+usage='功能'
+_class='上课'
+
 @bot.register(group)
 def group_message(msg):
     if isinstance(msg.chat, Group) and not msg.is_at:
         return
     else:
-        choice = msg.test.lstrip().rstrip()
+        print("{}:{}".format(msg.member.name, msg.text))
+        choice = msg.text.split("@天外流光")
+        while '' in choice:
+            choice.remove('')
+        choice=str(choice[0]).lstrip()
+        print(choice)
+        print(choice.encode())
+        print("功能".encode())
+        print(choice.startswith('功能'))
         if msg.type != 'Text':
              ret = '[奸笑][奸笑]'
-        elif re.match("功能", choice) is not None:
-            return usage
+        elif re.match("功能", choice):
+            ret= usage
         elif re.match("上课", choice) is not None:
-            return _class
+            ret= _class
         elif re.match("新建约球",choice) is not None:
             if check(msg.member.name) and db_excute(INSERT.format(msg.member.name,str(datetime.datetime.now()))):
-                return "新建约球成功，请使用命令 添加约球时间 来设置时间"
+                ret= "新建约球成功，请使用命令 添加约球时间 来设置时间"
             else:
-                return "新建约球失败"
+                ret= "新建约球失败"
         elif re.match("添加约球时间",choice) is not None:
-            time=''
-            if check(msg.member.name) and db_excute(UPDATE.format("time",time):
-                return  "添加约球时间 成功"
+            time = ''
+            if check(msg.member.name) and db_excute(UPDATE.format("time",time)):
+                ret=  "添加约球时间 成功"
             else:
-                return "添加约球时间失败"
+                ret="添加约球时间失败"
         elif re.match("删除约球",choice) is not None:
             if check(msg.member.name) and db_excute(DELETE.format(msg.member.name)):
-                return "删除约球成功"
+                ret= "删除约球成功"
             else:
-                return "删除约球失败"
+                ret= "删除约球失败"
         elif re.match("查看约球",choice) is not None:
-            return get_yueqiu()
+            ret = get_yueqiu()
         elif re.match("加入约球",choice) is not None:
-            return
+            name=str(choice).split("加入约球")
+            name.remove('')
+            name=name[0].lstrip().rstrip()
+            if join_yueqiu(name):
+                ret = '加入'+name+'的约球成功'
+            else:
+                ret= '加入约球失败'
         elif re.match("所有请假记录",choice) is not None:
-            return get_qingjia()
+            ret = get_qingjia()
         elif re.match("请假",choice) is not None:
-            return
+            temp=msg.text.split('#')
+            name=msg.member.name
+            for i in temp:
+                i=i.lstrip().rstrip()
+                if re.match("时间",i):
+                    qingjia[name]["time"]=i
+                elif re.match("原因",i):
+                    qingjia[name]["reason"]=i
+            if  qingjia[name]["time"] is not None and qingjia[name]["time"].length > 10 and qingjia[name]["reason"] is not None and qingjia[name]["reason"].length >10:
+                ret = "请假条已添加到缓存区"
+            else:
+                ret='添加失败，请注意格式'
+        elif re.match("确认请假",choice) is not None:
+            name=msg.member.name
+            if qingjia[name]["time"] is not None and qingjia[name]["time"].length > 10 and qingjia[name]["reason"] is not None and qingjia[name]["reason"].length > 10:
+                try:
+                    conn = sqlite3.connect('database')
+                    conn.execute('INSERT INTO qingjia(name,time,reason,c_time) VALUES("{}","{}","{}","{}")'.format(name,qingjia[name]["time"],qingjia[name]["reason"],datetime.datetime.now()))
+                    conn.commit()
+                    ret="确认请假成功"
+                except BaseException:
+                    ret="确认请假失败"
+                finally:
+                    conn.close()
         else:
-            ret = auto_ai(msg.text)
+            ret = auto_ai(choice)
             print('[接收]' + str(msg))
             print('[发送]' + str(ret))
     return '@{}{}'.format(msg.member.name, ret)
 
 def auto_send():
-
+    return
 
 def get_yueqiu():
-
+    try:
+        conn = sqlite3.connect('database')
+        ans=conn.execute("SELECT * FROM yueqiu WHERE is_valid =\"TRUE\" ")
+        conn.commit()
+        temp=''
+        for i in ans:
+            if temp is not '':
+                temp=temp+'\n'
+            for ii in i:
+                if temp is '':
+                    temp = temp + str(ii)
+                else:
+                    temp = temp + '  ' + str(ii)
+        if temp is '':
+            temp='暂无约球信息'
+        return temp
+    except BaseException:
+        return '查询失败'
+    finally:
+        conn.close()
 
 def get_qingjia():
+    try:
+        conn = sqlite3.connect('database')
+        ans=conn.execute("SELECT * FROM qingjia ")
+        conn.commit()
+        temp=''
+        for i in ans:
+            if temp is not '':
+                temp=temp+'\n'
+            for ii in i:
+                if temp is '':
+                    temp=temp+str(ii)
+                else:
+                    temp=temp+'  '+str(ii)
+        if temp is '':
+            temp='暂无请假信息'
+        return temp
+    except BaseException:
+        return '查询失败'
+    finally:
+        conn.close()
+def join_yueqiu(s):
+    try:
+        conn = sqlite3.connect('database')
+        ans=conn.execute("SELECT \"members\" FROM yueqiu WHERE c_name=\"{}\" AND is_valid= \"TRUE\" ".format(s))
+        conn.commit()
+        print(ans)
+        if ans is None:
+            ans=s
+        else:
+            ans=ans+" "+s
+        return db_excute(UPDATE.format("members","\'"+ans+"\'",s))
+    except BaseException:
+        return False
+    finally:
+        conn.close()
+
+
 embed()
